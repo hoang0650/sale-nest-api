@@ -1,30 +1,31 @@
-const {Cart} = require('../models/cart');
+// const {Cart} = require('../models/cart');
 const {Order} = require('../models/order');
-
+const sendEmail  = require('../config/emailService')
 // Tiến hành thanh toán
 async function Payment (req, res) {
-    const { name, phone, email, address } = req.body;
-    const cart = await Cart.findOne().populate('items.productId');
+    try {
+        const { fullName, phone, address, email, items, totalPrice,orderId} = req.body;
+        const newOrder = new Order({
+          fullName,
+          phone,
+          address,
+          email,
+          items,
+          totalPrice,
+          orderId,
+        });
+    
+        await newOrder.save();
+        // await Cart.deleteOne();
 
-    if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ message: 'Giỏ hàng trống.' });
-    }
-
-    const order = new Order({
-        name,
-        phone,
-        email,
-        address,
-        cart: {
-            items: cart.items,
-            totalPrice: cart.totalPrice,
-        },
-    });
-
-    await order.save();
-    await Cart.deleteOne(); // Xóa giỏ hàng sau khi thanh toán
-
-    res.json({ message: 'Thanh toán thành công!', order });
+        // Gửi email xác nhận
+        sendEmail(email, newOrder);
+    
+        return res.status(201).json({ message: 'Order created successfully', orderId });
+      } catch (error) {
+        return res.status(500).json({ message: 'Error creating order', error });
+      }
 };
+
 
 module.exports = {Payment};

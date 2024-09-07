@@ -9,9 +9,9 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var productRouter = require('./routes/product');
 var cartRouter = require('./routes/cart');
-var orderRouter = require('./routes/order')
+var orderRouter = require('./routes/order');
 var fileRouter = require('./routes/file');
-var webhookRouter = require('./routes/webhook')
+var webhookRouter = require('./routes/webhook');
 const swaggerConfig = require('./config/swagger');
 
 var app = express();
