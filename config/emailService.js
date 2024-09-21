@@ -4,21 +4,18 @@ dotenv.config();
 
 const sendEmail = (toEmail, order) => {
   const transporter = nodemailer.createTransport({
-    // service: 'Gmail',
-    // auth: {
-    //   user: 'hoang.ph2158@sinhvien.hoasen.edu.vn',
-    //   pass: 'qzhobjzjkvmoyovv',
-    // },
-    host: 'mail.privateemail.com',
-    port: 465,
-    secure: true,
+    service: 'Gmail',
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: 'hoang.ph2158@sinhvien.hoasen.edu.vn',
+      pass: 'qzhobjzjkvmoyovv',
     },
-    tls: {
-      rejectUnauthorized: false, // Bỏ qua chứng chỉ tự ký
-    },
+    // host: 'mail.privateemail.com',
+    // port: 465,
+    // secure: true,
+    // auth: {
+    //   user: process.env.EMAIL_USER,
+    //   pass: process.env.EMAIL_PASS,
+    // },
   });
 
   const orderDetails = order.items.map(item => {
