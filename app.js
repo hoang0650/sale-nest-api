@@ -12,10 +12,31 @@ var cartRouter = require('./routes/cart');
 var orderRouter = require('./routes/order');
 var fileRouter = require('./routes/file');
 var webhookRouter = require('./routes/webhook');
+const reviewRoutes = require('./routes/review');
 const swaggerConfig = require('./config/swagger');
 
 var app = express();
 connectDB();
+
+//Middleware để xác thực token
+function authentication(req,res,next){
+  const token = req.header('Authorization')
+  if(!token) return res.status(401).json({message:'Authorization'})
+  jwt.verify(token, process.env.JWT_SECRET, (err,user)=>{
+    if(err) return res.status(403).json({message:'Forbidden'})
+    req.user = user
+    next();
+  })
+}
+
+// Middleware để kiểm tra role
+const authorize = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) return res.status(403).send('Forbidden');
+
+    next();
+  };
+};
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -33,6 +54,7 @@ app.use('/api/webhook', webhookRouter);
 app.use('/api/products', productRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api', fileRouter);
 // Swagger setup
 app.use('/api-docs', swaggerConfig.swaggerUi.serve, swaggerConfig.swaggerUi.setup(swaggerConfig.swaggerDocs));
