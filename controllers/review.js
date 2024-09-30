@@ -1,35 +1,34 @@
 const Review = require('../models/review');
 
-// POST: Thêm đánh giá mới
-async function addReview (req, res) {
-    const { userId, productId, rating, comment } = req.body;
-
-    if (!userId || !productId || !rating || !comment) {
-        return res.status(400).json({ error: 'Vui lòng điền đủ thông tin' });
-    }
-
+// Lấy danh sách đánh giá theo productId
+const getReviewsByProduct = async (req, res) => {
     try {
-        const newReview = new Review({ userId, productId, rating, comment });
-        await newReview.save();
-        res.status(201).json(newReview);
-    } catch (error) {
-        res.status(500).json({ error: 'Có lỗi xảy ra khi thêm đánh giá' });
-    }
-}
-
-// GET: Lấy tất cả đánh giá của một sản phẩm
-async function getReviews (req, res) {
-    const { productId } = req.params;
-
-    try {
-        const reviews = await Review.find({ productId }).populate('userId', 'username'); // populate để lấy thông tin người dùng
+        const { productId } = req.params;
+        const reviews = await Review.find({ productId }).populate('userId', 'name'); // Populate để lấy thông tin người dùng
         res.status(200).json(reviews);
     } catch (error) {
-        res.status(500).json({ error: 'Có lỗi xảy ra khi lấy đánh giá' });
+        res.status(500).json({ message: 'Error fetching reviews', error });
     }
-}
+};
+
+// Tạo mới đánh giá
+const addReview = async (req, res) => {
+    try {
+        const { userId, productId, rating, comment } = req.body;
+        const review = new Review({
+            userId,
+            productId,
+            rating,
+            comment
+        });
+        await review.save();
+        res.status(201).json(review);
+    } catch (error) {
+        res.status(500).json({ message: 'Error adding review', error });
+    }
+};
 
 module.exports = {
-    addReview,
-    getReviews
-}
+    getReviewsByProduct,
+    addReview
+};

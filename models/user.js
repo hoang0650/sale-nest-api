@@ -25,15 +25,20 @@ const UserSchema = new Schema({
     online: {
         type: Boolean, default: false
     },
-    role: { 
-        type: String, 
+    role: {
+        type: String,
         enum: ['user', 'admin'],
         default: 'user',
-        required: true, 
+        required: true,
     },
-    avatar: { type: String},
+    avatar: { type: String },
+    contact: {
+        phone: String,
+        address: String
+    },
     loyaltyPoints: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
+    orderHistory: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order' }],
     loginHistory: [
         {
             loginDate: { type: Date, default: Date.now },

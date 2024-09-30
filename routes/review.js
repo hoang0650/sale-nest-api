@@ -1,11 +1,11 @@
 var express = require('express');
 var router = express.Router();
-const {addReview, getReviews} = require('../controllers/review')
+const {getReviewsByProduct, addReview} = require('../controllers/review')
 
-// Lấy danh sách sản phẩm
-router.get('/:productId', getReviews);
+// Route để lấy đánh giá của một sản phẩm
+router.get('/products/:productId', getReviewsByProduct);
 
-// Thêm một sản phẩm mới (chỉ dùng cho admin, ví dụ)
+// Route để thêm một đánh giá
 router.post('/', addReview);
 
 module.exports = router;
