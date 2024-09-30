@@ -3,7 +3,7 @@ var router = express.Router();
 const {getReviewsByProduct, addReview} = require('../controllers/review')
 
 // Route để lấy đánh giá của một sản phẩm
-router.get('/products/:productId', getReviewsByProduct);
+router.get('/:productId/products', getReviewsByProduct);
 
 // Route để thêm một đánh giá
 router.post('/', addReview);
