@@ -1,6 +1,29 @@
 // const {Cart} = require('../models/cart');
 const {Order} = require('../models/order');
 const sendEmail  = require('../config/emailService')
+
+// Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
+async function getOrder(req, res) {
+  const { search } = req.query;
+
+  try {
+    let query = {};
+    
+    if (search) {
+      query = {
+        $or: [
+          { orderId: { $regex: search, $options: 'i' } }, // tìm kiếm theo tên
+        ]
+      };
+    }
+
+    const products = await Order.find(query);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 // Tiến hành thanh toán
 async function Payment (req, res) {
   try {
@@ -28,4 +51,4 @@ async function Payment (req, res) {
 };
 
 
-module.exports = {Payment};
+module.exports = {getOrder,Payment};
