@@ -1,23 +1,24 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+
 const UserSchema = new Schema({
     userId: {
         type: String,
         unique: true,
-        require: true
+        required: true
     },
     username: {
         type: String,
-        require: true
+        required: true
     },
     email: {
         type: String,
-        require: true,
+        required: true,
         unique: true
     },
     password: {
         type: String,
-        require: true
+        required: true
     },
     blocked: {
         type: Boolean, default: false
@@ -44,7 +45,8 @@ const UserSchema = new Schema({
             loginDate: { type: Date, default: Date.now },
             ipAddress: String
         }
-    ]
+    ],
+    usedVouchers: [{ type: String }]  // Thêm trường này để lưu voucher đã sử dụng
 })
 
 const User = mongoose.model('User', UserSchema);

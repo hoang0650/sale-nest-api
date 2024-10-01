@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const { getUserInfo, createUser, login } = require('../controllers/user');
+const { getUserInfo, createUser, login, applyVoucher } = require('../controllers/user');
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -139,5 +139,7 @@ router.post('/login', login);
  */
 
 router.get('/info', getUserInfo);
+
+router.post('/apply-voucher', applyVoucher);
 
 module.exports = router;

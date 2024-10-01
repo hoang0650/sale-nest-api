@@ -1,5 +1,6 @@
 const { Product } = require('../models/product');
-
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 async function getProduct(req, res) {
@@ -76,20 +77,19 @@ async function deleteProduct(req, res) {
 
 // Thêm một sản phẩm mới (chỉ dùng cho admin, ví dụ)
 async function createProduct(req, res) {
-  const { name, description, price, stock, categoryId, imageUrls, variants } = req.body;
-
+  const { name, price, description, variants } = req.body;
+  const images = req.files.map(file => file.path);  // Lấy đường dẫn hình ảnh đã upload
   try {
-    const product = new Product({
+    const newProduct = {
       name,
-      description,
       price,
-      stock,
-      categoryId,
-      imageUrls,
-      variants
-    });
-
-    await product.save();
+      description,
+      images,
+      variants: JSON.parse(variants)
+    };
+  
+    // Lưu sản phẩm vào cơ sở dữ liệu
+    await Product.create(newProduct)
     res.status(201).json({ message: 'Product created successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
