@@ -9,6 +9,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var productRouter = require('./routes/product');
 var orderRouter = require('./routes/order');
+var contactRouter = require('./routes/contact');
 var fileRouter = require('./routes/file');
 var webhookRouter = require('./routes/webhook');
 const reviewRoutes = require('./routes/review');
@@ -53,6 +54,7 @@ app.use('/api/webhook', webhookRouter);
 app.use('/api/products', productRouter);
 app.use('/api/orders', orderRouter);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/contacts', contactRouter);
 app.use('/api', fileRouter);
 // Swagger setup
 app.use('/api-docs', swaggerConfig.swaggerUi.serve, swaggerConfig.swaggerUi.setup(swaggerConfig.swaggerDocs));
