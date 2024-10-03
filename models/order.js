@@ -13,8 +13,14 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   status: { type: String, enum: ['pending', 'completed', 'delivered', 'cancelled'], default: 'pending' },
+  subtotal: { type: Number, required: true },
+  discount: { type: Number, required: true },
   totalPrice: { type: Number, required: true },
   orderId: { type: String, required: true, unique: true },
+  voucherCode: {
+    type: String,
+    default: '', // Mặc định là chuỗi rỗng
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

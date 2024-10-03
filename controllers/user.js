@@ -1,9 +1,9 @@
-const { User } = require('../models/user')
-const jwt = require('jsonwebtoken')
+const { User } = require('../models/user');
+const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
-dotenv.config()
+dotenv.config();
 
 // Định nghĩa mã voucher hợp lệ
 const validVouchers = {
@@ -11,17 +11,18 @@ const validVouchers = {
     'SUMMER20': 20     // Giảm 20%
 };
 
+// Áp dụng voucher cho người dùng
 async function applyVoucher(req, res) {
     const { userId, voucherCode } = req.body;
 
     // Kiểm tra tính hợp lệ của mã voucher
-    if (!(voucherCode in validVouchers)) {
+    if (!validVouchers[voucherCode]) {
         return res.status(400).json({ message: 'Invalid voucher code.' });
     }
 
     try {
-        // Tìm người dùng trong cơ sở dữ liệu
-        const user = await User.findOne({ userId });
+        // Tìm người dùng trong cơ sở dữ liệu dựa trên _id
+        const user = await User.findOne({ _id: userId });
 
         // Kiểm tra xem người dùng có tồn tại không
         if (!user) {
@@ -38,8 +39,8 @@ async function applyVoucher(req, res) {
         await user.save(); // Lưu thông tin người dùng vào cơ sở dữ liệu
 
         const discount = validVouchers[voucherCode];
-        res.status(200).json({ 
-            message: `Voucher applied successfully. You received a ${discount}% discount.` 
+        res.status(200).json({
+            message: `Voucher applied successfully. You received a ${discount}% discount.`
         });
     } catch (error) {
         console.error(error);
@@ -47,66 +48,113 @@ async function applyVoucher(req, res) {
     }
 }
 
+// Lấy thông tin người dùng từ token
 async function getUserInfo(req, res) {
-    const token = req.headers.authorization.split(' ')[1];
-    await jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            // Token không hợp lệ hoặc đã hết hạn
-            console.error('Invalid token:', err.message);
-        } else {
-            // Token hợp lệ, decoded chứa payload
-            res.json(decoded);
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ message: 'Authorization header missing.' });
         }
-    })
-}
 
+        const token = authHeader.split(' ')[1]; // Lấy token từ Bearer token
 
-async function createUser(req, res) {
-    const { username, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 8);
-    function generateUniqueUserId() {
-        return Date.now().toString() + Math.floor(Math.random() * 1000);
-    }
-    User.create({ userId: generateUniqueUserId(), email: email, username: username, password: hashedPassword }).then(data => {
-        res.status(200).send(data)
-    }).catch(err => res.status(500).json({ err }))
-}
-
-function login(req, res) {
-    const { password, email } = req.body;
-    User.findOne({ email }).then(
-        user => {
-            if (!user) {
-                return res.status(401).json({ message: 'Invalid credentials' });
+        await jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Invalid or expired token.' });
+            } else {
+                res.json(decoded); // Trả về thông tin đã decode từ token
             }
-            bcrypt.compare(password, user.password, (err, isMatch) => {
-                if (err) return res.status(500).send('Error comparing passwords: ' + err);
-                if (!isMatch) return res.status(400).send('Invalid password');
-                console.log('user', user);
-                const payloadData = {
-                    userId: user.userId,
-                    username: user.username,
-                    email: user.email,
-                    blocked: user.blocked,
-                    role: user.role
-                }
-                const token = jwt.sign(payloadData, process.env.JWT_SECRET, {
-                    expiresIn: '30d'
-                })
-                const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                user.online = true
-                user.loginHistory.push({ loginDate: new Date(), ipAddress });
-                user.save()
-                    .then(() => res.send({ message: 'Login successful', token }))
-                    .catch(err => res.status(500).send('Error updating login history: ' + err));
-            })
-        })
-        .catch(err => res.status(500).send('Error finding user: ' + err));
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
+
+// Tạo người dùng mới
+async function createUser(req, res) {
+    try {
+        const { username, email, password } = req.body;
+
+        // Hash mật khẩu trước khi lưu
+        const hashedPassword = await bcrypt.hash(password, 8);
+
+        // Tạo userId duy nhất
+        function generateUniqueUserId() {
+            return Date.now().toString() + Math.floor(Math.random() * 1000);
+        }
+
+        // Tạo người dùng mới trong cơ sở dữ liệu
+        const newUser = await User.create({
+            userId: generateUniqueUserId(),
+            email,
+            username,
+            password: hashedPassword,
+        });
+
+        res.status(200).send(newUser);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error creating user.' });
+    }
+}
+
+// Đăng nhập người dùng
+async function login(req, res) {
+    const { password, email } = req.body;
+
+    try {
+        // Kiểm tra xem email và password có được cung cấp không
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required.' });
+        }
+
+        // Tìm người dùng theo email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+
+        // So sánh mật khẩu
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid password.' });
+        }
+
+        // Tạo payload cho token
+        const payloadData = {
+            userId: user.userId,
+            username: user.username,
+            email: user.email,
+            blocked: user.blocked,
+            role: user.role,
+            loginHistory: user.loginHistory,
+            usedVouchers: user.usedVouchers,
+        };
+
+        // Tạo token với JWT
+        const token = jwt.sign(payloadData, process.env.JWT_SECRET, {
+            expiresIn: '30d',
+        });
+
+        // Lấy địa chỉ IP người dùng
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+        // Cập nhật trạng thái online và lịch sử đăng nhập
+        user.online = true;
+        user.loginHistory.push({ loginDate: new Date(), ipAddress });
+        await user.save();
+
+        res.send({ message: 'Login successful', token });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error logging in.' });
+    }
 }
 
 module.exports = {
     getUserInfo,
     createUser,
     login,
-    applyVoucher
-}
+    applyVoucher,
+};

@@ -27,15 +27,17 @@ async function getOrder(req, res) {
 // Tiến hành thanh toán
 async function Payment (req, res) {
   try {
-    const { fullName, phone, address, email, items, totalPrice,orderId} = req.body;
+    const { fullName, phone, address, email, items, discount, subtotal, totalPrice,orderId} = req.body;
     const newOrder = new Order({
       fullName,
       phone,
       address,
       email,
       items,
+      discount,
+      subtotal,
       totalPrice,
-      orderId,
+      orderId,  
     });
 
     await newOrder.save();

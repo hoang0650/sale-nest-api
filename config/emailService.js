@@ -26,7 +26,7 @@ const sendEmail = (toEmail, order) => {
     from: 'noreply@yensaothanhbinh.com',
     to: toEmail,
     subject: `Xác nhận đơn hàng ${order.orderId}`,
-    text: `Cảm ơn bạn đã đặt hàng!\n\nChi tiết đơn hàng của bạn:\n\nMã đơn hàng: ${order.orderId}\n\nSản phẩm:\n${orderDetails}\n\nTổng tiền: ${formatNumber(order.totalPrice)} VND`,
+    text: `Cảm ơn bạn đã đặt hàng!\n\nChi tiết đơn hàng của bạn:\n\nMã đơn hàng: ${order.orderId}\n\nSản phẩm:\n${orderDetails}\n\nThành tiền: ${formatNumber(order.subtotal)}\n\nGiảm giá: ${formatNumber(order.discount)} VND\n\nTổng tiền: ${formatNumber(order.totalPrice)} VND`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
