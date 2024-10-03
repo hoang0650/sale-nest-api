@@ -60,16 +60,16 @@ async function updateProduct(req, res) {
 
 // Xóa sản phẩm theo ID
 async function deleteProduct(req, res) {
-  const { id } = req.params;
-
   try {
-    const deletedProduct = await Product.findByIdAndDelete(id);
-
-    if (!deletedProduct) return res.status(404).json({ message: 'Product not found' });
-
-    res.json({ message: 'Product deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const product = await Product.findById(req.params.id);
+    if (product) {
+      await product.remove();
+      res.json({ message: 'Product deleted' });
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -77,14 +77,15 @@ async function deleteProduct(req, res) {
 
 // Thêm một sản phẩm mới (chỉ dùng cho admin, ví dụ)
 async function createProduct(req, res) {
-  const { name, price, description, variants } = req.body;
-  const images = req.files.map(file => file.path);  // Lấy đường dẫn hình ảnh đã upload
+  const { name, price, description, variants, image } = req.body;
+  // const images = req.files.map(file => file.path);  
+  // Lấy đường dẫn hình ảnh đã upload
   try {
     const newProduct = {
       name,
       price,
       description,
-      images,
+      image,
       variants: JSON.parse(variants)
     };
   
