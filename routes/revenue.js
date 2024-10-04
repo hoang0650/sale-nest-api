@@ -1,7 +1,8 @@
 var express = require('express');
 var router = express.Router();
-const {revenuePerDay} = require('../controllers/revenue')
+const {revenuePerDay,addRevenue} = require('../controllers/revenue')
 
-router.get('/day/:date',revenuePerDay)
+router.post('/',addRevenue)
+router.get('/:period',revenuePerDay)
 
 module.exports = router;
