@@ -15,6 +15,10 @@ var webhookRouter = require('./routes/webhook');
 var reviewRoutes = require('./routes/review');
 var revenueRoutes = require('./routes/revenue');
 const swaggerConfig = require('./config/swagger');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const { spawn } = require('child_process');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 var app = express();
 connectDB();
@@ -38,6 +42,32 @@ const authorize = (roles) => {
     next();
   };
 };
+
+// Khởi động Python API
+const pythonProcess = spawn('python3', [path.join(__dirname, 'python_api', 'app.py')]);
+
+pythonProcess.stdout.on('data', (data) => {
+  console.log(`Python API: ${data}`);
+});
+
+pythonProcess.stderr.on('data', (data) => {
+  console.error(`Python API Error: ${data}`);
+});
+
+// Proxy cho Python API
+app.use('/api/ai/*', createProxyMiddleware({ 
+  target: 'http://localhost:5000',
+  changeOrigin: true,
+}));
+
+// Xử lý upload file cho OCR và object detection
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+  res.json({ filename: req.file.filename });
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');

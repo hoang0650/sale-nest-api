@@ -1,3 +1,4 @@
 # backend
 node_modules/*
+python_api/python_api/venv/
 package-lock.json
