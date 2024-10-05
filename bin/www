@@ -8,6 +8,9 @@ var app = require('../app');
 var debug = require('debug')('sale-api:server');
 var http = require('http');
 
+// Thêm socket.io
+const socketIO = require('socket.io');
+
 /**
  * Get port from environment and store in Express.
  */
@@ -20,6 +23,16 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+// Thêm dòng này để khởi tạo socket.io với server
+const io = socketIO(server, {
+  cors: {
+    origin: "https://www.nintshop.com", // Địa chỉ Angular frontend của bạn
+    methods: ["GET", "POST"], // Các phương thức được phép
+    allowedHeaders: ["my-custom-header"], // Thêm nếu có headers cần thiết
+    credentials: true // Nếu cần gửi cookie hoặc authentication
+  }
+});
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -88,3 +101,16 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+io.on('connection', (socket) => {
+  console.log('A user connected');
+
+  socket.on('message', (msg) => {
+    console.log('Message received: ', msg);
+    io.emit('message', msg);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
