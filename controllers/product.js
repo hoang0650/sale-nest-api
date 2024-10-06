@@ -13,7 +13,8 @@ async function getProduct(req, res) {
       query = {
         $or: [
           { name: { $regex: search, $options: 'i' } }, // tìm kiếm theo tên
-          { description: { $regex: search, $options: 'i' } } // tìm kiếm theo mô tả
+          { description: { $regex: search, $options: 'i' } }, // tìm kiếm theo mô tả
+          { type: { $regex: search, $options: 'i' } }
         ]
       };
     }
@@ -24,7 +25,6 @@ async function getProduct(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-
 
 // API lấy chi tiết sản phẩm theo ID
 async function getProductById(req, res) {

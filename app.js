@@ -56,7 +56,7 @@ pythonProcess.stderr.on('data', (data) => {
 
 // Proxy cho Python API
 app.use('/api/ai/*', createProxyMiddleware({ 
-  target: 'http://localhost:5000',
+  target: ['http://localhost:5000','http://localhost:4200'],
   changeOrigin: true,
 }));
 
