@@ -22,7 +22,7 @@ async function applyVoucher(req, res) {
 
     try {
         // Tìm người dùng trong cơ sở dữ liệu dựa trên _id
-        const user = await User.findOne({ _id: userId });
+        const user = await User.findById(userId);
 
         // Kiểm tra xem người dùng có tồn tại không
         if (!user) {
@@ -123,7 +123,10 @@ async function login(req, res) {
 
         // Tạo payload cho token
         const payloadData = {
+            _id: user._id,
             userId: user.userId,
+            balance: user.balance,
+            coinBalance: user.coinBalance,
             username: user.username,
             email: user.email,
             blocked: user.blocked,

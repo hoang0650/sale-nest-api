@@ -4,7 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
-const connectDB  = require('./config/config');
+const connectDB = require('./config/config');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var productRouter = require('./routes/product');
@@ -14,21 +14,23 @@ var fileRouter = require('./routes/file');
 var webhookRouter = require('./routes/webhook');
 var reviewRoutes = require('./routes/review');
 var revenueRoutes = require('./routes/revenue');
+var walletRoutes = require('./routes/wallet');
 const swaggerConfig = require('./config/swagger');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn } = require('child_process');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
+
 var app = express();
 connectDB();
 
 //Middleware để xác thực token
-function authentication(req,res,next){
+function authentication(req, res, next) {
   const token = req.header('Authorization')
-  if(!token) return res.status(401).json({message:'Authorization'})
-  jwt.verify(token, process.env.JWT_SECRET, (err,user)=>{
-    if(err) return res.status(403).json({message:'Forbidden'})
+  if (!token) return res.status(401).json({ message: 'Authorization' })
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Forbidden' })
     req.user = user
     next();
   })
@@ -55,8 +57,8 @@ pythonProcess.stderr.on('data', (data) => {
 });
 
 // Proxy cho Python API
-app.use('/api/ai/*', createProxyMiddleware({ 
-  target: ['http://localhost:5000','http://localhost:4200'],
+app.use('/api/ai/*', createProxyMiddleware({
+  target: ['http://localhost:5000'],
   changeOrigin: true,
 }));
 
@@ -87,16 +89,18 @@ app.use('/api/orders', orderRouter);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/contacts', contactRouter);
 app.use('/api/revenues', revenueRoutes);
+app.use('/api/wallet', walletRoutes);
 app.use('/api', fileRouter);
+
 // Swagger setup
 app.use('/api-docs', swaggerConfig.swaggerUi.serve, swaggerConfig.swaggerUi.setup(swaggerConfig.swaggerDocs));
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
