@@ -15,6 +15,8 @@ var webhookRouter = require('./routes/webhook');
 var reviewRoutes = require('./routes/review');
 var revenueRoutes = require('./routes/revenue');
 var walletRoutes = require('./routes/wallet');
+var videoRoutes = require('./routes/video');
+var creatorRoutes = require('./routes/creator');
 const swaggerConfig = require('./config/swagger');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn } = require('child_process');
@@ -90,6 +92,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/contacts', contactRouter);
 app.use('/api/revenues', revenueRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/videos', videoRoutes);
+app.use('/api/creators', creatorRoutes);
 app.use('/api', fileRouter);
 
 // Swagger setup
