@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const {uploadImages, getImageById, getAllImage} = require('../controllers/fileController');
+const {uploadImage, getImageById} = require('../controllers/fileController');
 const multer = require('multer');
 // Cấu hình multer để lưu trữ ảnh tạm thời
 const storage = multer.memoryStorage();
@@ -23,7 +23,7 @@ const upload = multer({ storage: storage });
  *       500:
  *         description: Server error
  */
-router.post('/upload/image',upload.array('images',30), uploadImages);
+router.post('/upload/image',upload.single('image'), uploadImage);
 /**
  * @swagger
  * /api/image/{filename}:
@@ -52,33 +52,6 @@ router.post('/upload/image',upload.array('images',30), uploadImages);
  *         description: Image not found
  */
 router.get('/upload/image/:id', getImageById);
-/**
- * @swagger
- * /api/image/{filename}:
- *   get:
- *     summary: Get all image by filename
- *     parameters:
- *       - in: path
- *         name: filename
- *         required: true
- *         schema:
- *           type: string
- *         description: The filename of the image
- *     responses:
- *       200:
- *         description: Image retrieved successfully
- *         content:
- *           image/jpeg:
- *             schema:
- *               type: string
- *               format: binary
- *           image/png:
- *             schema:
- *               type: string
- *               format: binary
- *       404:
- *         description: Image not found
- */
-router.get('/upload/image', getAllImage);
+
 
 module.exports = router;
