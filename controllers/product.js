@@ -8,7 +8,7 @@ async function getProduct(req, res) {
 
   try {
     let query = {};
-    
+
     if (search) {
       query = {
         $or: [
@@ -40,34 +40,21 @@ async function getProductById(req, res) {
 
 // Cập nhật sản phẩm theo ID
 async function updateProduct(req, res) {
-  const { id } = req.params;
-  const { name, description, price, stock, categoryId, imageUrls, variants } = req.body;
-
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      { name, description, price, stock, categoryId, imageUrls, variants },
-      { new: true } // trả về đối tượng đã cập nhật
-    );
-
-    if (!updatedProduct) return res.status(404).json({ message: 'Product not found' });
-
-    res.json({ message: 'Product updated successfully', product: updatedProduct });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 }
 
 // Xóa sản phẩm theo ID
 async function deleteProduct(req, res) {
   try {
-    const product = await Product.findById(req.params.id);
-    if (product) {
-      await product.remove();
-      res.json({ message: 'Product deleted' });
-    } else {
-      res.status(404).json({ message: 'Product not found' });
-    }
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ message: 'Room deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -88,7 +75,7 @@ async function createProduct(req, res) {
       image,
       variants: JSON.parse(variants)
     };
-  
+
     // Lưu sản phẩm vào cơ sở dữ liệu
     await Product.create(newProduct)
     res.status(201).json({ message: 'Product created successfully' });
