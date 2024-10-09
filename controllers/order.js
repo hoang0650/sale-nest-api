@@ -35,14 +35,30 @@ async function getOrders(req,res) {
 
 async function updateStatus(req,res) {
   try {
-    const updatedOrder = await Order.findOneAndUpdate({ id: req.params.id }, { status: req.body.status }, { new: true });
-    if (updatedOrder) {
-      res.json(updatedOrder);
-    } else {
-      res.status(404).json({ message: 'Order not found' });
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['pending', 'completed', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
     }
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+
+    // Find the order by _id and update
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.status(200).json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 }
 
