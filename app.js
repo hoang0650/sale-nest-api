@@ -17,9 +17,8 @@ var revenueRoutes = require('./routes/revenue');
 var walletRoutes = require('./routes/wallet');
 var videoRoutes = require('./routes/video');
 var creatorRoutes = require('./routes/creator');
+var aiChatBotRoutes = require('./routes/aiChatBot');
 const swaggerConfig = require('./config/swagger');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const { spawn } = require('child_process');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
@@ -47,22 +46,6 @@ const authorize = (roles) => {
   };
 };
 
-// Khởi động Python API
-const pythonProcess = spawn('python3', [path.join(__dirname, 'python_api', 'app.py')]);
-
-pythonProcess.stdout.on('data', (data) => {
-  console.log(`Python API: ${data}`);
-});
-
-pythonProcess.stderr.on('data', (data) => {
-  console.error(`Python API Error: ${data}`);
-});
-
-// Proxy cho Python API
-app.use('/api/ai/*', createProxyMiddleware({
-  target: ['http://localhost:5000'],
-  changeOrigin: true,
-}));
 
 // Xử lý upload file cho OCR và object detection
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -94,6 +77,7 @@ app.use('/api/revenues', revenueRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/creators', creatorRoutes);
+app.use('/api/ai', aiChatBotRoutes);
 app.use('/api', fileRouter);
 
 // Swagger setup
