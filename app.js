@@ -17,7 +17,8 @@ var revenueRoutes = require('./routes/revenue');
 var walletRoutes = require('./routes/wallet');
 var videoRoutes = require('./routes/video');
 var creatorRoutes = require('./routes/creator');
-var aiChatBotRoutes = require('./routes/aiChatBot');
+// var aiChatBotRoutes = require('./routes/aiChatBot');
+var customeAIRoutes = require('./routes/customeAI');
 const swaggerConfig = require('./config/swagger');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
@@ -65,6 +66,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
+// Ensure UTF-8 encoding
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
@@ -77,7 +83,8 @@ app.use('/api/revenues', revenueRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/creators', creatorRoutes);
-app.use('/api/ai', aiChatBotRoutes);
+// app.use('/api/ai', aiChatBotRoutes);
+app.use('/api/customAI', customeAIRoutes);
 app.use('/api', fileRouter);
 
 // Swagger setup
