@@ -19,6 +19,7 @@ var videoRoutes = require('./routes/video');
 var creatorRoutes = require('./routes/creator');
 // var aiChatBotRoutes = require('./routes/aiChatBot');
 var customeAIRoutes = require('./routes/customeAI');
+var sessionRoutes = require('./routes/session');
 const swaggerConfig = require('./config/swagger');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
@@ -85,6 +86,7 @@ app.use('/api/videos', videoRoutes);
 app.use('/api/creators', creatorRoutes);
 // app.use('/api/ai', aiChatBotRoutes);
 app.use('/api/customAI', customeAIRoutes);
+app.use('/api/sessions', sessionRoutes);
 app.use('/api', fileRouter);
 
 // Swagger setup
