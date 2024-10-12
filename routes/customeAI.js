@@ -3,9 +3,16 @@ var router = express.Router();
 const CustomAI = require('../config/customAI');
 const fs = require('fs').promises;
 const path = require('path');
+const multer = require('multer');
 
 const ai = new CustomAI();
 const trainedModelsFile = 'trained_models.json';
+// Cấu hình multer để xử lý file upload
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 } // Giới hạn kích thước mỗi file là 50MB
+});
+
 async function addTrainedModel(modelName) {
     try {
       let models = await getTrainedModels();
@@ -43,6 +50,40 @@ router.post('/train', async (req, res) => {
         res.status(500).json({ error: 'Training failed' });
     }
 });
+
+router.post('/train-folder', upload.array('files',10), async (req, res) => {
+  try {
+    const folderPath = path.join(__dirname, 'uploads');
+    await ai.trainFromFolder(folderPath);
+    const modelName = `model_folder_${Date.now()}.json`;
+    await ai.saveModel(modelName);
+    await addTrainedModel(modelName);
+    res.json({ message: 'Folder training completed successfully', modelName });
+  } catch (error) {
+    res.status(500).json({ error: 'Folder training failed' });
+  } finally {
+    // Clean up uploaded files
+    const files = await fs.readdir('uploads');
+    for (const file of files) {
+      await fs.unlink(path.join('uploads', file));
+    }
+  }
+});
+
+router.post('/train-web', async (req, res) => {
+  const { url } = req.body;
+  
+  try {
+    await ai.trainFromWeb(url);
+    const modelName = `model_web_${Date.now()}.json`;
+    await ai.saveModel(modelName);
+    await addTrainedModel(modelName);
+    res.json({ message: 'Web training completed successfully', modelName });
+  } catch (error) {
+    res.status(500).json({ error: 'Web training failed' });
+  }
+});
+
 
 router.post('/query', async (req, res) => {
     const { query } = req.body;

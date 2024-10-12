@@ -9,7 +9,6 @@ const productSchema = new mongoose.Schema({
     discountPrice: Number,
     image: [String],
     variants: [{
-        name: String,
         size: String,
         color: String,
         stock: Number

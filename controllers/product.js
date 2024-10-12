@@ -64,20 +64,26 @@ async function deleteProduct(req, res) {
 
 // Thêm một sản phẩm mới (chỉ dùng cho admin, ví dụ)
 async function createProduct(req, res) {
-  const { name, price, description, variants, image } = req.body;
-  // const images = req.files.map(file => file.path);  
-  // Lấy đường dẫn hình ảnh đã upload
+  const { name, price, description, variants} = req.body;
   try {
-    const newProduct = {
+    const newProduct = new Product({
       name,
       price,
       description,
-      image,
       variants: JSON.parse(variants)
-    };
+    });
 
+    if(req.files){
+      let path = ''
+      req.files.forEach(function(files,index,arr) {
+        path = path + files.path + ','
+      });
+      path = path.substring(0, path.lastIndexOf(","));
+      newProduct.image = path
+    }
+    
     // Lưu sản phẩm vào cơ sở dữ liệu
-    await Product.create(newProduct)
+    await newProduct.save()
     res.status(201).json({ message: 'Product created successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

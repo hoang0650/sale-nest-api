@@ -50,12 +50,6 @@ const authorize = (roles) => {
 
 
 // Xử lý upload file cho OCR và object detection
-app.post('/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-  res.json({ filename: req.file.filename });
-});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -66,7 +60,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads',express.static('uploads'));
 app.use(cors());
+// Tăng giới hạn kích thước body lên 50MB
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Ensure UTF-8 encoding
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');

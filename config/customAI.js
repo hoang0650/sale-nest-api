@@ -1,5 +1,13 @@
 const natural = require('natural');
-const fs = require('fs');
+const fs = require('fs').promises;
+const path = require('path');
+const csv = require('csv-parser');
+const mammoth = require('mammoth');
+const xlsx = require('xlsx');
+const pdf = require('pdf-parse');
+const { createWorker } = require('tesseract.js');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 class CustomAI {
   constructor() {
@@ -17,10 +25,8 @@ class CustomAI {
     this.tfidf.addDocument(stemmedTokens);
     this.documents.push(stemmedTokens);
     
-    // Train the classifier
     this.classifier.addDocument(stemmedTokens, 'category');
     
-    // Retrain the entire classifier
     await new Promise((resolve) => {
       this.classifier.train(() => {
         resolve();
@@ -28,11 +34,102 @@ class CustomAI {
     });
   }
 
+  async trainFromFolder(folderPath) {
+    const files = await fs.readdir(folderPath);
+    for (const file of files) {
+      const filePath = path.join(folderPath, file);
+      const ext = path.extname(file).toLowerCase();
+      let text = '';
+
+      switch (ext) {
+        case '.csv':
+          text = await this.readCSV(filePath);
+          break;
+        case '.docx':
+          text = await this.readDOCX(filePath);
+          break;
+        case '.xlsx':
+          text = await this.readXLSX(filePath);
+          break;
+        case '.pdf':
+          text = await this.readPDF(filePath);
+          break;
+        case '.txt':
+          text = await fs.readFile(filePath, 'utf-8');
+          break;
+        case '.png':
+        case '.jpg':
+        case '.jpeg':
+          text = await this.readImage(filePath);
+          break;
+        default:
+          console.log(`Unsupported file type: ${ext}`);
+          continue;
+      }
+
+      await this.train(text);
+    }
+  }
+
+  async trainFromWeb(url) {
+    try {
+      const response = await axios.get(url);
+      const $ = cheerio.load(response.data);
+      const text = $('body').text();
+      await this.train(text);
+    } catch (error) {
+      console.error(`Error training from web: ${error.message}`);
+    }
+  }
+
+  async readCSV(filePath) {
+    return new Promise((resolve) => {
+      let text = '';
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (row) => {
+          text += Object.values(row).join(' ') + ' ';
+        })
+        .on('end', () => {
+          resolve(text);
+        });
+    });
+  }
+
+  async readDOCX(filePath) {
+    const result = await mammoth.extractRawText({ path: filePath });
+    return result.value;
+  }
+
+  async readXLSX(filePath) {
+    const workbook = xlsx.readFile(filePath);
+    let text = '';
+    workbook.SheetNames.forEach(sheetName => {
+      const sheet = workbook.Sheets[sheetName];
+      text += xlsx.utils.sheet_to_csv(sheet) + ' ';
+    });
+    return text;
+  }
+
+  async readPDF(filePath) {
+    const dataBuffer = await fs.readFile(filePath);
+    const data = await pdf(dataBuffer);
+    return data.text;
+  }
+
+  async readImage(filePath) {
+    const worker = await createWorker();
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
+    const { data: { text } } = await worker.recognize(filePath);
+    await worker.terminate();
+    return text;
+  }
+
   async generateResponse(query) {
     const tokens = this.tokenizer.tokenize(query.toLowerCase());
     const stemmedTokens = tokens.map(token => this.stemmer.stem(token));
     
-    // Find the most similar document
     let maxSimilarity = 0;
     let mostSimilarDoc = null;
     
@@ -45,9 +142,7 @@ class CustomAI {
     });
     
     if (mostSimilarDoc) {
-      // Generate a response based on the most similar document
-      const response = this.generateResponseFromDocument(mostSimilarDoc);
-      return response;
+      return this.generateResponseFromDocument(mostSimilarDoc);
     } else {
       return "I'm sorry, I don't have enough information to answer that question.";
     }
@@ -75,22 +170,20 @@ class CustomAI {
   }
 
   generateResponseFromDocument(doc) {
-    // This is a very simple response generation.
-    // In a more advanced system, you'd use more sophisticated NLP techniques.
     return doc.join(' ');
   }
 
-  saveModel(filename) {
+  async saveModel(filename) {
     const modelData = {
       tfidf: this.tfidf,
       classifier: this.classifier.save(),
       documents: this.documents
     };
-    fs.writeFileSync(filename, JSON.stringify(modelData));
+    await fs.writeFile(filename, JSON.stringify(modelData));
   }
 
-  loadModel(filename) {
-    const modelData = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+  async loadModel(filename) {
+    const modelData = JSON.parse(await fs.readFile(filename, 'utf-8'));
     this.tfidf = new natural.TfIdf(modelData.tfidf);
     this.classifier = natural.BayesClassifier.restore(modelData.classifier);
     this.documents = modelData.documents;
