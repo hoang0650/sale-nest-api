@@ -1,6 +1,33 @@
 const { Product } = require('../models/product');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for handling multiple file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = './uploads/';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not an image! Please upload only images.'), false);
+    }
+  }
+}).array('images', 30); // 'images' is the field name, 5 is the max number of files
 
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 async function getProduct(req, res) {
@@ -41,11 +68,31 @@ async function getProductById(req, res) {
 // Cập nhật sản phẩm theo ID
 async function updateProduct(req, res) {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.status(200).json(product);
+    upload(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      const productData = JSON.parse(req.body.productData);
+      const productId = req.params.id;
+
+      const existingProduct = await Product.findById(productId);
+      if (!existingProduct) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+
+      // Add new image URLs to the existing ones
+      const newImageUrls = req.files.map(file => `/uploads/${file.filename}`);
+      productData.image = [...existingProduct.image, ...newImageUrls];
+
+      const updatedProduct = await Product.findByIdAndUpdate(productId, productData, { new: true });
+      res.json({ message: 'Product updated successfully', product: updatedProduct });
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error in updateProduct:', error);
+    res.status(500).json({ error: 'Error updating product.' });
   }
 }
 
@@ -64,29 +111,27 @@ async function deleteProduct(req, res) {
 
 // Thêm một sản phẩm mới (chỉ dùng cho admin, ví dụ)
 async function createProduct(req, res) {
-  const { name, price, description, variants} = req.body;
   try {
-    const newProduct = new Product({
-      name,
-      price,
-      description,
-      variants: JSON.parse(variants)
-    });
+    upload(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        return res.status(500).json({ error: err.message });
+      }
 
-    if(req.files){
-      let path = ''
-      req.files.forEach(function(files,index,arr) {
-        path = path + files.path + ','
-      });
-      path = path.substring(0, path.lastIndexOf(","));
-      newProduct.image = path
-    }
-    
-    // Lưu sản phẩm vào cơ sở dữ liệu
-    await newProduct.save()
-    res.status(201).json({ message: 'Product created successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+      const productData = JSON.parse(req.body.productData);
+      
+      // Add image URLs to the product data
+      productData.image = req.files.map(file => `/uploads/${file.filename}`);
+
+      const product = new Product(productData);
+      await product.save();
+
+      res.status(201).json({ message: 'Product created successfully', product });
+    });
+  } catch (error) {
+    console.error('Error in createProduct:', error);
+    res.status(500).json({ error: 'Error creating product.' });
   }
 };
 
