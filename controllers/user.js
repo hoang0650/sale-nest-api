@@ -1,17 +1,17 @@
 const { User } = require('../models/user');
+const { Post } = require('../models/post')
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
-const { body, validationResult } = require('express-validator');
 dotenv.config();
 
-// Định nghĩa mã voucher hợp lệ
+// Invalid Voucher Code
 const validVouchers = {
     'DISCOUNT10': 10,  // Giảm 10%
     'SUMMER20': 20     // Giảm 20%
 };
 
-// Áp dụng voucher cho người dùng
+// Apply Voucher Code
 async function applyVoucher(req, res) {
     const { userId, voucherCode } = req.body;
 
@@ -48,7 +48,7 @@ async function applyVoucher(req, res) {
     }
 }
 
-// Lấy thông tin người dùng từ token
+// Get User Information from access token
 async function getUserInfo(req, res) {
     try {
         const authHeader = req.headers.authorization;
@@ -71,7 +71,7 @@ async function getUserInfo(req, res) {
     }
 }
 
-// Tạo người dùng mới
+// Create a new user
 async function createUser(req, res) {
     try {
         const { username, email, password } = req.body;
@@ -99,7 +99,7 @@ async function createUser(req, res) {
     }
 }
 
-// Đăng nhập người dùng
+// User Login
 async function login(req, res) {
     const { password, email } = req.body;
 
@@ -155,9 +155,77 @@ async function login(req, res) {
     }
 }
 
+// Update avatar
+async function updateAvatar(req, res) {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { avatar: req.file.path },
+            { new: true }
+        );
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating avatar' });
+    }
+};
+
+// Update cover photo
+async function updateCoverPhoto(req, res) {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { coverPhoto: req.file.path },
+            { new: true }
+        );
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating cover photo' });
+    }
+};
+
+// Create post
+async function createPost(req, res) {
+    try {
+        const post = new Post({
+            user: req.body.userId,
+            content: req.body.content,
+            image: req.file ? req.file.path : null
+        });
+        await post.save();
+        res.status(201).json(post);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating post' });
+    }
+};
+
+// Get friends list
+async function getFriends(req, res) {
+    try {
+        const user = await User.findById(req.params.id).populate('friends');
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user profile' });
+    }
+};
+
+// Get user posts
+async function getPost(req, res) {
+    try {
+        const posts = await Post.find({ user: req.params.id }).sort('createdAt');
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user posts' });
+    }
+};
+
 module.exports = {
     getUserInfo,
     createUser,
     login,
     applyVoucher,
+    updateAvatar,
+    updateCoverPhoto,
+    createPost,
+    getFriends,
+    getPost
 };

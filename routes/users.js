@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const { getUserInfo, createUser, login, applyVoucher } = require('../controllers/user');
+const { getUserInfo, createUser, login, applyVoucher, updateAvatar, updateCoverPhoto, createPost, getFriends, getPost } = require('../controllers/user');
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -141,5 +141,15 @@ router.post('/login', login);
 router.get('/info', getUserInfo);
 
 router.post('/apply-voucher', applyVoucher);
+
+router.put('/:id/avatar', updateAvatar);
+
+router.put('/:id/cover', updateCoverPhoto);
+
+router.post('/posts', createPost);
+
+router.get('/:id/friends', getFriends);
+
+router.get('/:id/posts', getPost);
 
 module.exports = router;
