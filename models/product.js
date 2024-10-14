@@ -8,6 +8,14 @@ const productSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     discountPrice: Number,
     tiktokAffiliateLink: String,
+    clickCount: {
+        type: Number,
+        default: 0
+    },
+    viewCount: {
+        type: Number,
+        default: 0
+    },
     image: [String],
     variants: [{
         size: String,

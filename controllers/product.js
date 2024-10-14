@@ -6,7 +6,7 @@ const fs = require('fs');
 // Configure multer for handling multiple file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = './uploads/';
+    const dir = './uploads/products';
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -58,7 +58,7 @@ async function getProductById(req, res) {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
-
+    product.viewCount += 1;
     res.json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -84,7 +84,7 @@ async function updateProduct(req, res) {
       }
 
       // Add new image URLs to the existing ones
-      const newImageUrls = req.files.map(file => `/uploads/${file.filename}`);
+      const newImageUrls = req.files.map(file => `https://sale-nest-api.onrender.com/uploads/products/${file.filename}`);
       productData.image = [...existingProduct.image, ...newImageUrls];
 
       const updatedProduct = await Product.findByIdAndUpdate(productId, productData, { new: true });
@@ -122,7 +122,7 @@ async function createProduct(req, res) {
       const productData = JSON.parse(req.body.productData);
       
       // Add image URLs to the product data
-      productData.image = req.files.map(file => `/uploads/${file.filename}`);
+      productData.image = req.files.map(file => `https://sale-nest-api.onrender.com/uploads/products/${file.filename}`);
 
       const product = new Product(productData);
       await product.save();
@@ -135,11 +135,27 @@ async function createProduct(req, res) {
   }
 };
 
+async function countClickLink (req, res) {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    product.clickCount += 1;
+    await product.save();
+    res.json({ message: 'Click count updated', clickCount: product.clickCount });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+
 
 module.exports = {
   getProduct,
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  countClickLink
 }
