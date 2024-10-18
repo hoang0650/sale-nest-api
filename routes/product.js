@@ -1,11 +1,14 @@
 var express = require('express');
 var router = express.Router();
-const {getProduct, getProductById, createProduct, updateProduct, deleteProduct, countClickLink} = require('../controllers/product')
+const {getProduct, getProductById, getRelatedProducts, createProduct, updateProduct, deleteProduct, countClickLink} = require('../controllers/product')
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 router.get('/', getProduct);
 
 // Lấy chi tiết sản phẩm theo ID
 router.get('/:id', getProductById);
+
+// Lấy chi tiết sản phẩm liên quan theo ID
+router.get('/related-products/:id', getProductById);
 
 // Thêm một sản phẩm mới (chỉ admin)
 router.post('/', createProduct);

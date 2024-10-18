@@ -66,6 +66,28 @@ async function getProductById(req, res) {
   }
 };
 
+async function getRelatedProducts (req, res) {
+  try {
+    // Lấy sản phẩm hiện tại
+    const currentProduct = await Product.findById(req.params.id);
+
+    if (!currentProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Tìm các sản phẩm liên quan theo một tiêu chí (ví dụ cùng loại, cùng danh mục)
+    const relatedProducts = await Product.find({
+      category: currentProduct.category, // Giả sử bạn lọc theo category
+      _id: { $ne: productId } // Loại bỏ sản phẩm hiện tại
+    }).limit(10); // Giới hạn số sản phẩm liên quan trả về
+
+    res.json(relatedProducts);
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 // Cập nhật sản phẩm theo ID
 async function updateProduct(req, res) {
   try {
@@ -155,6 +177,7 @@ async function countClickLink (req, res) {
 module.exports = {
   getProduct,
   getProductById,
+  getRelatedProducts,
   createProduct,
   updateProduct,
   deleteProduct,

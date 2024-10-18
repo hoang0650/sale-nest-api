@@ -12,9 +12,9 @@ async function getBlogs (req, res)  {
 async function getBlog (req, res) {
   try {
     const blog = await Blog.findById(req.params.id);
-    if (!blog) {
-      return res.status(404).json({ message: 'Không tìm thấy bài blog' });
-    }
+    // if (!blog) {
+    //   return res.status(404).json({ message: 'Không tìm thấy bài blog' });
+    // }
     res.json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Có lỗi xảy ra khi lấy bài blog', error: error.message });
