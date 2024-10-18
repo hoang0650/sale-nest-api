@@ -66,25 +66,27 @@ async function getProductById(req, res) {
   }
 };
 
-async function getRelatedProducts (req, res) {
+async function getRelatedProducts(productId, type, limit = 8) {
   try {
-    // Lấy sản phẩm hiện tại
-    const currentProduct = await Product.findById(req.params.id);
+    // Find the product with the given ID
+    const product = await Product.findById(productId);
 
-    if (!currentProduct) {
-      return res.status(404).json({ message: 'Product not found' });
+    if (!product) {
+      return [];
     }
 
-    // Tìm các sản phẩm liên quan theo một tiêu chí (ví dụ cùng loại, cùng danh mục)
+    // Get related products based on product type
     const relatedProducts = await Product.find({
-      category: currentProduct.category, // Giả sử bạn lọc theo category
-      _id: { $ne: productId } // Loại bỏ sản phẩm hiện tại
-    }).limit(10); // Giới hạn số sản phẩm liên quan trả về
+      type: product.type,
+      _id: { $ne: productId }, // Exclude the current product
+    })
+      .sort({ clickCount: -1 }) // Sort by click count in descending order
+      .limit(limit);
 
-    res.json(relatedProducts);
+    return relatedProducts;
   } catch (error) {
     console.error('Error fetching related products:', error);
-    res.status(500).json({ message: 'Server error' });
+    return [];
   }
 }
 
@@ -143,7 +145,7 @@ async function createProduct(req, res) {
       }
 
       const productData = JSON.parse(req.body.productData);
-      
+
       // Add image URLs to the product data
       productData.image = req.files.map(file => `https://sale-nest-api.onrender.com/uploads/products/${file.filename}`);
 
@@ -158,7 +160,7 @@ async function createProduct(req, res) {
   }
 };
 
-async function countClickLink (req, res) {
+async function countClickLink(req, res) {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
