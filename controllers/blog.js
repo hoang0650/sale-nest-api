@@ -12,12 +12,38 @@ async function getBlogs (req, res)  {
 async function getBlog (req, res) {
   try {
     const blog = await Blog.findById(req.params.id);
-    // if (!blog) {
-    //   return res.status(404).json({ message: 'Không tìm thấy bài blog' });
-    // }
+    if (!blog) {
+      return res.status(404).json({ message: 'Không tìm thấy bài blog' });
+    }
+    // blog.viewCount += 1;
+    await blog.save();
     res.json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Có lỗi xảy ra khi lấy bài blog', error: error.message });
+  }
+}
+
+async function getRelatedPosts(postId, type, limit = 8) {
+  try {
+    // Find the product with the given ID
+    const post = await Blog.findById(postId);
+
+    if (!post) {
+      return [];
+    }
+
+    // Get related products based on product type
+    const relatedPosts = await Blog.find({
+      type: post.type,
+      _id: { $ne: postId }, // Exclude the current product
+    })
+      .sort({ clickCount: -1 }) // Sort by click count in descending order
+      .limit(limit);
+
+    return relatedPosts;
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    return [];
   }
 }
 
@@ -55,4 +81,4 @@ async function deleteBlog (req, res) {
   }
 }
 
-module.exports = {getBlogs, getBlog, createBlog, updateBlog, deleteBlog};
+module.exports = {getBlogs, getBlog, getRelatedPosts, createBlog, updateBlog, deleteBlog};

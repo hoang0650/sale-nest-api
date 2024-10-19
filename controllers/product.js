@@ -66,6 +66,19 @@ async function getProductById(req, res) {
   }
 };
 
+async function getRelated(req,res){
+  const productId = req.params.id;
+    const limit = 8; // Giới hạn số lượng sản phẩm liên quan trả về
+
+    try {
+        // Gọi hàm getRelatedProducts
+        const relatedProducts = await getRelatedProducts(productId, null, limit);
+        res.json(relatedProducts);
+    } catch (error) {
+        res.status(500).send('Error fetching related products');
+    }
+}
+
 async function getRelatedProducts(productId, type, limit = 8) {
   try {
     // Find the product with the given ID
@@ -179,7 +192,7 @@ async function countClickLink(req, res) {
 module.exports = {
   getProduct,
   getProductById,
-  getRelatedProducts,
+  getRelated,
   createProduct,
   updateProduct,
   deleteProduct,
