@@ -23,6 +23,14 @@ const blogSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    required: true
+  },
+  viewCount: {
+    type: Number,
+    default: 0
+  },
   author: {
     type: String,
     required: true

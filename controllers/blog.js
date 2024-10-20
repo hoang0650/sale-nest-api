@@ -15,7 +15,7 @@ async function getBlog (req, res) {
     if (!blog) {
       return res.status(404).json({ message: 'Không tìm thấy bài blog' });
     }
-    // blog.viewCount += 1;
+    blog.viewCount += 1;
     await blog.save();
     res.json(blog);
   } catch (error) {
