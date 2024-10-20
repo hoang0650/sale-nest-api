@@ -12,10 +12,10 @@ const sectionSchema = new mongoose.Schema({
     type: String,
     required: false
   },
-  imageUrl: {
+  images: [{
     type: String,
     required: false
-  }
+  }]
 });
 
 const blogSchema = new mongoose.Schema({
@@ -26,6 +26,10 @@ const blogSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true
+  },
+  imageUrl: {
+    type: String,
+    required: false
   },
   viewCount: {
     type: Number,

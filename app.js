@@ -22,8 +22,7 @@ var blogRoutes = require('./routes/blog');
 var customeAIRoutes = require('./routes/customeAI');
 var sessionRoutes = require('./routes/session');
 const swaggerConfig = require('./config/swagger');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+
 
 
 var app = express();
