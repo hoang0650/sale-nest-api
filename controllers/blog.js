@@ -25,6 +25,19 @@ async function getBlog(req, res) {
   }
 }
 
+async function getRelated(req,res){
+  const postId = req.params.id;
+    const limit = 8; // Giới hạn số lượng sản phẩm liên quan trả về
+
+    try {
+        // Gọi hàm getRelatedProducts
+        const relatedProducts = await getRelatedPosts(postId, null, limit);
+        res.json(relatedProducts);
+    } catch (error) {
+        res.status(500).send('Error fetching related products');
+    }
+}
+
 // Lấy các bài viết liên quan
 async function getRelatedPosts(postId, type, limit = 8) {
   try {
@@ -95,4 +108,4 @@ async function deleteBlog(req, res) {
   }
 }
 
-module.exports = { getBlogs, getBlog, getRelatedPosts, createBlog, updateBlog, deleteBlog };
+module.exports = { getBlogs, getBlog, getRelated, createBlog, updateBlog, deleteBlog };
