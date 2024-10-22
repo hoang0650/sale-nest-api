@@ -1,36 +1,7 @@
-const {Blog} = require('../models/blog');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { Blog } = require('../models/blog');
 
-// Configure multer for handling multiple file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = './uploads/blogs';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Not an image! Please upload only images.'), false);
-    }
-  }
-}).array('images', 30); // 'images' is the field name, 30 is the max number of files
-
-
-async function getBlogs (req, res)  {
+// Lấy danh sách blog
+async function getBlogs(req, res) {
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
     res.json(blogs);
@@ -39,7 +10,8 @@ async function getBlogs (req, res)  {
   }
 }
 
-async function getBlog (req, res) {
+// Lấy chi tiết blog
+async function getBlog(req, res) {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
@@ -53,21 +25,20 @@ async function getBlog (req, res) {
   }
 }
 
+// Lấy các bài viết liên quan
 async function getRelatedPosts(postId, type, limit = 8) {
   try {
-    // Find the product with the given ID
     const post = await Blog.findById(postId);
 
     if (!post) {
       return [];
     }
 
-    // Get related products based on product type
     const relatedPosts = await Blog.find({
       type: post.type,
-      _id: { $ne: postId }, // Exclude the current product
+      _id: { $ne: postId },
     })
-      .sort({ clickCount: -1 }) // Sort by click count in descending order
+      .sort({ clickCount: -1 })
       .limit(limit);
 
     return relatedPosts;
@@ -77,102 +48,46 @@ async function getRelatedPosts(postId, type, limit = 8) {
   }
 }
 
+// Tạo bài blog mới
 async function createBlog(req, res) {
   try {
-    upload(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        return res.status(400).json({ error: err.message });
-      } else if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+    const blogData = req.body;
 
-      const blogData = JSON.parse(req.body.blogData);
+    // Xử lý dữ liệu blog bao gồm các trường imageUrl từ URL người dùng nhập
+    const blog = new Blog(blogData);
+    await blog.save();
 
-      // Add image URLs to the blog data
-      blogData.imageUrl = req.files.map(file => `/uploads/blogs/${file.filename}`)[0]; // Chỉ lấy hình ảnh đầu tiên làm imageUrl cho blog
-
-      // Xử lý phần images cho các sections
-      let fileIndex = 1; // Bắt đầu từ file thứ hai
-      blogData.sections = blogData.sections.map(section => {
-        section.images = [];
-        while (req.files[fileIndex] && section.images.length < 5) {
-          section.images.push(`/uploads/blogs/${req.files[fileIndex].filename}`);
-          fileIndex++;
-        }
-        return section;
-      });
-
-      const blog = new Blog(blogData);
-      await blog.save();
-
-      res.status(201).json({ message: 'Blog created successfully', blog });
-    });
+    res.status(201).json({ message: 'Blog created successfully', blog });
   } catch (error) {
     console.error('Error in createBlog:', error);
     res.status(500).json({ error: 'Error creating blog.' });
   }
-};
+}
 
-
+// Cập nhật bài blog
 async function updateBlog(req, res) {
   try {
-    upload(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        return res.status(400).json({ error: err.message });
-      } else if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+    const blogId = req.params.id;
+    const blogData = req.body;
 
-      const blogData = JSON.parse(req.body.blogData);
-      const blogId = req.params.id;
+    const existingBlog = await Blog.findById(blogId);
+    if (!existingBlog) {
+      return res.status(404).json({ error: 'Blog not found' });
+    }
 
-      const existingBlog = await Blog.findById(blogId);
-      if (!existingBlog) {
-        return res.status(404).json({ error: 'Blog not found' });
-      }
-
-      // Add new image URLs to the existing ones
-      const newImageUrls = req.files.map(file => `/uploads/blogs/${file.filename}`);
-      blogData.imageUrl = blogData.imageUrl || existingBlog.imageUrl;
-
-      // Merge existing section images with new ones
-      let fileIndex = newImageUrls.length ? 1 : 0;
-      blogData.sections.forEach((section, idx) => {
-        if (!section.images) section.images = [];
-        while (req.files[fileIndex] && section.images.length < 5) {
-          section.images.push(`/uploads/blogs/${req.files[fileIndex].filename}`);
-          fileIndex++;
-        }
-      });
-
-      const updatedBlog = await Blog.findByIdAndUpdate(blogId, blogData, { new: true });
-      res.json({ message: 'Blog updated successfully', blog: updatedBlog });
-    });
+    const updatedBlog = await Blog.findByIdAndUpdate(blogId, blogData, { new: true });
+    res.json({ message: 'Blog updated successfully', blog: updatedBlog });
   } catch (error) {
     console.error('Error in updateBlog:', error);
     res.status(500).json({ error: 'Error updating blog.' });
   }
 }
 
-
-async function deleteBlog (req, res) {
+// Xóa bài blog
+async function deleteBlog(req, res) {
   try {
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
     if (!deletedBlog) return res.status(404).json({ message: 'Blog not found' });
-
-    // Delete associated images
-    if (deletedBlog.imageUrl) {
-      fs.unlink(path.join(__dirname, '..', deletedBlog.imageUrl), (err) => {
-        if (err) console.error('Error deleting main image:', err);
-      });
-    }
-    deletedBlog.sections.forEach(section => {
-      section.images.forEach(image => {
-        fs.unlink(path.join(__dirname, '..', image), (err) => {
-          if (err) console.error('Error deleting section image:', err);
-        });
-      });
-    });
 
     res.json({ message: 'Blog deleted successfully' });
   } catch (error) {
@@ -180,4 +95,4 @@ async function deleteBlog (req, res) {
   }
 }
 
-module.exports = {getBlogs, getBlog, getRelatedPosts, createBlog, updateBlog, deleteBlog};
+module.exports = { getBlogs, getBlog, getRelatedPosts, createBlog, updateBlog, deleteBlog };

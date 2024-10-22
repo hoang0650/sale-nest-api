@@ -1,44 +1,18 @@
 const mongoose = require('mongoose');
 const sectionSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  content: {
-    type: String,
-    required: true
-  },
-  videoUrl: {
-    type: String,
-    required: false
-  },
-  images: [{
-    type: String,
-    required: false
-  }]
+  title: String,
+  content: String
 });
 
 const blogSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  type: {
-    type: String,
-    required: true
-  },
-  imageUrl: {
-    type: String,
-    required: false
-  },
+  title: String,
+  type: String,
+  imageUrl: String,
+  author: String,
   viewCount: {
     type: Number,
     default: 0
-  },
-  author: {
-    type: String,
-    required: true
-  },
+  }, 
   sections: [sectionSchema],
   createdAt: {
     type: Date,
