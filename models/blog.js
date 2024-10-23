@@ -1,4 +1,32 @@
 const mongoose = require('mongoose');
+
+// Schema cho phản hồi (replies)
+const replySchema = new mongoose.Schema({
+  author: String,
+  content: String,
+  date: {
+      type: Date,
+      default: Date.now
+  },
+  avatarUrl: String
+});
+
+// Schema cho bình luận
+const commentSchema = new mongoose.Schema({
+  author: String,
+  content: String,
+  date: {
+      type: Date,
+      default: Date.now
+  },
+  avatarUrl: String,
+  likes: {
+      type: Number,
+      default: 0
+  },
+  replies: [replySchema]
+});
+
 const sectionSchema = new mongoose.Schema({
   title: String,
   content: String
@@ -14,6 +42,7 @@ const blogSchema = new mongoose.Schema({
     default: 0
   }, 
   sections: [sectionSchema],
+  comments: [commentSchema], // Thêm trường bình luận vào đây
   createdAt: {
     type: Date,
     default: Date.now

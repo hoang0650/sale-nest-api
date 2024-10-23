@@ -38,6 +38,69 @@ async function getRelated(req,res){
     }
 }
 
+async function getAllBlogComments(req,res) {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) {
+        return res.status(404).json({ message: 'Blog not found' });
+    }
+    res.json(blog.comments);
+} catch (error) {
+    res.status(500).json({ message: error.message });
+}
+}
+
+async function createBlogComment(req, res) {
+  const { author, content, avatarUrl } = req.body;
+    try {
+        const blog = await Blog.findById(req.params.id);
+        if (!blog) {
+            return res.status(404).json({ message: 'Blog not found' });
+        }
+
+        const newComment = {
+            author,
+            content,
+            avatarUrl
+        };
+
+        blog.comments.push(newComment);
+        await blog.save();
+
+        res.status(201).json(newComment);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+async function createRelyComment(req, res) {
+  const { author, content, avatarUrl } = req.body;
+    try {
+        const blog = await Blog.findById(req.params.id);
+        if (!blog) {
+            return res.status(404).json({ message: 'Blog not found' });
+        }
+
+        const comment = blog.comments.id(req.params.commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment not found' });
+        }
+
+        const newReply = {
+            author,
+            content,
+            avatarUrl
+        };
+
+        comment.replies.push(newReply);
+        await blog.save();
+
+        res.status(201).json(newReply);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 // Lấy các bài viết liên quan
 async function getRelatedPosts(postId, type, limit = 8) {
   try {
@@ -108,4 +171,4 @@ async function deleteBlog(req, res) {
   }
 }
 
-module.exports = { getBlogs, getBlog, getRelated, createBlog, updateBlog, deleteBlog };
+module.exports = { getBlogs, getBlog, getRelated, getAllBlogComments,createBlogComment, createRelyComment, createBlog, updateBlog, deleteBlog };
