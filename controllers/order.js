@@ -1,6 +1,7 @@
 // const {Cart} = require('../models/cart');
 const {Order} = require('../models/order');
-const sendEmail  = require('../config/emailService')
+const {Product} = require('../models/product');
+const sendEmail  = require('../config/emailService');
 
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 async function getOrder(req, res) {
@@ -33,7 +34,7 @@ async function getOrders(req,res) {
   }
 }
 
-async function updateStatus(req,res) {
+async function updateStatus(req, res) {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -44,18 +45,29 @@ async function updateStatus(req,res) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // Find the order by _id and update
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    );
+    // Find the order by _id
+    const order = await Order.findById(id);
 
-    if (!updatedOrder) {
+    if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    res.status(200).json(updatedOrder);
+    // If the new status is 'completed' and the current status is not 'completed'
+    if (status === 'completed' && order.status !== 'completed') {
+      // Update the sold count for each product in the order
+      for (const item of order.items) {
+        await Product.findOneAndUpdate(
+          { name: item.name },
+          { $inc: { sold: item.quantity } }
+        );
+      }
+    }
+
+    // Update the order status
+    order.status = status;
+    await order.save();
+
+    res.status(200).json(order);
   } catch (error) {
     console.error('Error updating order:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
