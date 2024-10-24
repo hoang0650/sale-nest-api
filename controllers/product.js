@@ -53,6 +53,41 @@ async function getProduct(req, res) {
   }
 }
 
+// Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
+async function getProductWithPage(req, res) {
+  const { search, page = 1, limit = 10 } = req.query;
+
+  try {
+    let query = {};
+
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } }, // tìm kiếm theo tên
+          { description: { $regex: search, $options: 'i' } }, // tìm kiếm theo mô tả
+          { type: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+    // Tính toán skip và limit để phân trang
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find(query).skip(skip)
+    .limit(parseInt(limit));
+    // Lấy tổng số blog để tính số trang
+    const totalCount = await Product.countDocuments(query);
+    // Trả về dữ liệu cùng với tổng số bài viết
+    res.json({
+      products,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit), // Tổng số trang
+      currentPage: parseInt(page),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 // API lấy chi tiết sản phẩm theo ID
 async function getProductById(req, res) {
   try {
@@ -193,6 +228,7 @@ module.exports = {
   getProduct,
   getProductById,
   getRelated,
+  getProductWithPage,
   createProduct,
   updateProduct,
   deleteProduct,
