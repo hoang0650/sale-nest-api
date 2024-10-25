@@ -10,6 +10,10 @@ const orderSchema = new mongoose.Schema({
       name: { type: String, required: true },
       quantity: { type: Number, required: true },
       price: { type: Number, required: true },
+      variants: {
+        size: { type: String, required: false }, // Nếu cần bắt buộc, đổi required thành true
+        color: { type: String, required: false }
+      }
     },
   ],
   status: { type: String, enum: ['pending', 'completed', 'delivered', 'cancelled'], default: 'pending' },

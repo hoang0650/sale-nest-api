@@ -19,14 +19,14 @@ const sendEmail = (toEmail, order) => {
   });
 
   const orderDetails = order.items.map(item => {
-    return `- Tên sản phẩm: ${item.name}\n  Số lượng: ${item.quantity}\n  Giá: ${formatNumber(item.price)} VND`;
+    return `- Tên sản phẩm: ${item.name}\n  Số lượng: ${item.quantity}\n  Kích thước: ${item.variants.size}\n  Màu sắc/Loại: ${item.variants.color}\n Giá: ${formatNumber(item.price)} VND`;
   }).join('\n');
 
   const mailOptions = {
     from: 'noreply@yensaothanhbinh.com',
     to: toEmail,
     subject: `Xác nhận đơn hàng ${order.orderId}`,
-    text: `Cảm ơn bạn đã đặt hàng!\n\nChi tiết đơn hàng của bạn:\n\nMã đơn hàng: ${order.orderId}\n\nSản phẩm:\n${orderDetails}\n\nThành tiền: ${formatNumber(order.subtotal)}\n\nGiảm giá: ${formatNumber(order.discount)} VND\n\nTổng tiền: ${formatNumber(order.totalPrice)} VND`,
+    text: `Cảm ơn bạn đã đặt hàng!\n\nChi tiết đơn hàng của bạn:\n\nMã đơn hàng: ${order.orderId}\n\nSản phẩm:\n${orderDetails}\n\nThành tiền: ${formatNumber(order.subtotal)} VNĐ\n\nGiảm giá: ${formatNumber(order.discount)} VNĐ\n\nTổng tiền: ${formatNumber(order.totalPrice)} VND`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
