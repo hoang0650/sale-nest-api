@@ -8,6 +8,12 @@ const pdf = require('pdf-parse');
 const { createWorker } = require('tesseract.js');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const iconv = require('iconv-lite');
+const jschardet = require('jschardet');
+const translate = require('@vitalets/google-translate-api');
+const unidecode = require('unidecode');
+const utf8 = require('utf8');
+const { v4: uuidv4 } = require('uuid');
 
 class CustomAI {
   constructor() {
@@ -19,7 +25,8 @@ class CustomAI {
   }
 
   async train(text) {
-    const tokens = this.tokenizer.tokenize(text.toLowerCase());
+    const decodedText = this.decodeText(text);
+    const tokens = this.tokenizer.tokenize(decodedText.toLowerCase());
     const stemmedTokens = tokens.map(token => this.stemmer.stem(token));
     
     this.tfidf.addDocument(stemmedTokens);
@@ -55,7 +62,7 @@ class CustomAI {
           text = await this.readPDF(filePath);
           break;
         case '.txt':
-          text = await fs.readFile(filePath, 'utf-8');
+          text = await this.readTextFile(filePath);
           break;
         case '.png':
         case '.jpg':
@@ -73,8 +80,10 @@ class CustomAI {
 
   async trainFromWeb(url) {
     try {
-      const response = await axios.get(url);
-      const $ = cheerio.load(response.data);
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const encoding = this.detectEncoding(response.headers['content-type'], response.data);
+      const decodedData = iconv.decode(response.data, encoding);
+      const $ = cheerio.load(decodedData);
       const text = $('body').text();
       await this.train(text);
     } catch (error) {
@@ -82,39 +91,54 @@ class CustomAI {
     }
   }
 
+  detectEncoding(contentType, buffer) {
+    const charset = contentType && contentType.match(/charset=(.+)/i);
+    if (charset) {
+      return charset[1].toLowerCase();
+    }
+    const detected = jschardet.detect(buffer);
+    return detected.encoding || 'utf-8';
+  }
+
   async readCSV(filePath) {
     return new Promise((resolve) => {
       let text = '';
-      fs.createReadStream(filePath)
+      fs.createReadStream(filePath, { encoding: 'utf-8' })
         .pipe(csv())
         .on('data', (row) => {
           text += Object.values(row).join(' ') + ' ';
         })
         .on('end', () => {
-          resolve(text);
+          resolve(this.decodeText(text));
         });
     });
   }
 
   async readDOCX(filePath) {
     const result = await mammoth.extractRawText({ path: filePath });
-    return result.value;
+    return this.decodeText(result.value);
   }
 
   async readXLSX(filePath) {
-    const workbook = xlsx.readFile(filePath);
+    const workbook = xlsx.readFile(filePath, { type: 'buffer', cellText: true, cellDates: true });
     let text = '';
     workbook.SheetNames.forEach(sheetName => {
       const sheet = workbook.Sheets[sheetName];
-      text += xlsx.utils.sheet_to_csv(sheet) + ' ';
+      text += xlsx.utils.sheet_to_csv(sheet, { FS: ' ' }) + ' ';
     });
-    return text;
+    return this.decodeText(text);
   }
 
   async readPDF(filePath) {
     const dataBuffer = await fs.readFile(filePath);
     const data = await pdf(dataBuffer);
-    return data.text;
+    return this.decodeText(data.text);
+  }
+
+  async readTextFile(filePath) {
+    const buffer = await fs.readFile(filePath);
+    const encoding = jschardet.detect(buffer).encoding || 'utf-8';
+    return iconv.decode(buffer, encoding);
   }
 
   async readImage(filePath) {
@@ -123,11 +147,21 @@ class CustomAI {
     await worker.initialize('eng');
     const { data: { text } } = await worker.recognize(filePath);
     await worker.terminate();
-    return text;
+    return this.decodeText(text);
+  }
+
+  decodeText(text) {
+    try {
+      return utf8.decode(unidecode(text));
+    } catch (error) {
+      console.error('Error decoding text:', error);
+      return text;
+    }
   }
 
   async generateResponse(query) {
-    const tokens = this.tokenizer.tokenize(query.toLowerCase());
+    const decodedQuery = this.decodeText(query);
+    const tokens = this.tokenizer.tokenize(decodedQuery.toLowerCase());
     const stemmedTokens = tokens.map(token => this.stemmer.stem(token));
     
     let maxSimilarity = 0;
@@ -179,7 +213,7 @@ class CustomAI {
       classifier: this.classifier.save(),
       documents: this.documents
     };
-    await fs.writeFile(filename, JSON.stringify(modelData));
+    await fs.writeFile(filename, JSON.stringify(modelData), 'utf-8');
   }
 
   async loadModel(filename) {
@@ -187,6 +221,16 @@ class CustomAI {
     this.tfidf = new natural.TfIdf(modelData.tfidf);
     this.classifier = natural.BayesClassifier.restore(modelData.classifier);
     this.documents = modelData.documents;
+  }
+
+  async translateText(text, targetLanguage = 'en') {
+    try {
+      const result = await translate(text, { to: targetLanguage });
+      return result.text;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return text;
+    }
   }
 }
 

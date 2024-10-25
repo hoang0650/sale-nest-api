@@ -53,9 +53,34 @@ async function getProduct(req, res) {
   }
 }
 
+// Lấy danh sách sản phẩm theo role
+async function getProductByRole(req,res){
+    const userId = req.user._id;  // Assuming user info is stored in the request object after authentication
+    const userRole = req.user.role;
+
+    try {
+        let products;
+
+        if (userRole === 'admin') {
+            // Admin can view all products
+            products = await Product.find().populate('shopOwnerId', 'username');
+        } else if (userRole === 'shop') {
+            // Shop owner can only view their own products
+            products = await Product.find({ shopOwnerId: userId }).populate('shopOwnerId', 'username');
+        } else {
+            // Regular user can view all products
+            products = await Product.find().populate('shopOwnerId', 'username');
+        }
+
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
+}
+
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 async function getProductWithPage(req, res) {
-  const { search, page = 1, limit = 10 } = req.query;
+  const { search, page = 1, limit = 100 } = req.query;
 
   try {
     let query = {};
@@ -72,7 +97,9 @@ async function getProductWithPage(req, res) {
     // Tính toán skip và limit để phân trang
     const skip = (page - 1) * limit;
 
-    const products = await Product.find(query).skip(skip)
+    const products = await Product.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
     .limit(parseInt(limit));
     // Lấy tổng số blog để tính số trang
     const totalCount = await Product.countDocuments(query);
@@ -229,6 +256,7 @@ module.exports = {
   getProductById,
   getRelated,
   getProductWithPage,
+  getProductByRole,
   createProduct,
   updateProduct,
   deleteProduct,

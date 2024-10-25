@@ -2,7 +2,42 @@ const { Blog } = require('../models/blog');
 
 // Lấy danh sách blog
 async function getBlogs(req, res) {
-  const { search, page = 1, limit = 10 } = req.query; // Lấy page và limit từ query params, mặc định page = 1, limit = 10
+  try {
+    const blogs = await Blog.find().sort({ createdAt: -1 });
+    res.json(blogs);
+  } catch (error) {
+    res.status(500).json({ message: 'Có lỗi xảy ra khi lấy danh sách blog', error: error.message });
+  }
+}
+
+// Lấy danh sách blog theo role
+async function getBlogByRole(req,res) {
+  const userId = req.user._id;  // Assuming user info is stored in the request object after authentication
+    const userRole = req.user.role;
+
+    try {
+        let blogs;
+
+        if (userRole === 'admin') {
+            // Admin can view all blogs
+            blogs = await Blog.find().populate('authorId', 'username');
+        } else if (userRole === 'blog') {
+            // Blog owner can only view their own blogs
+            blogs = await Blog.find({ authorId: userId }).populate('authorId', 'username');
+        } else {
+            // Regular user or shop can view all blogs
+            blogs = await Blog.find().populate('authorId', 'username');
+        }
+
+        res.status(200).json(blogs);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch blogs' });
+    }
+}
+
+// Lấy danh sách blog
+async function getBlogWithPage(req, res) {
+  const { search, page = 1, limit = 100 } = req.query; // Lấy page và limit từ query params, mặc định page = 1, limit = 10
 
   try {
     let query = {};
@@ -23,6 +58,7 @@ async function getBlogs(req, res) {
     
     // Lấy danh sách blog có phân trang
     const blogs = await Blog.find(query)
+      .sort({ createdAt: -1 }) // -1 để sắp xếp theo thứ tự mới nhất
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -202,4 +238,4 @@ async function deleteBlog(req, res) {
   }
 }
 
-module.exports = { getBlogs, getBlog, getRelated, getAllBlogComments,createBlogComment, createRelyComment, createBlog, updateBlog, deleteBlog };
+module.exports = { getBlogs, getBlog, getRelated, getBlogByRole, getBlogWithPage, getAllBlogComments,createBlogComment, createRelyComment, createBlog, updateBlog, deleteBlog };

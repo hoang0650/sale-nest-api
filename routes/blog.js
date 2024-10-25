@@ -1,9 +1,11 @@
 var express = require('express');
 var router = express.Router();
-const {getBlogs, getBlog, getRelated, getAllBlogComments,createBlogComment, createRelyComment, createBlog, updateBlog, deleteBlog} = require('../controllers/blog')
-
+const {getBlogs, getBlog, getRelated, getBlogByRole, getBlogWithPage, getAllBlogComments,createBlogComment, createRelyComment, createBlog, updateBlog, deleteBlog} = require('../controllers/blog')
+const {checkRole} = require('../middleware/isAuthenticated');
 // GET: Lấy hết các bài Blog
 router.get('/', getBlogs);
+// GET: Lấy hết các bài Blog
+router.get('/query', getBlogWithPage);
 // GET: Lấy một bài Blog cụ thể
 router.get('/:id', getBlog);
 // GET: Lấy tất cả comment của blog
@@ -20,5 +22,7 @@ router.post('/:id/comments/:commentId/replies', createRelyComment);
 router.put('/:id', updateBlog);
 // DELETE: xóa bài Blog
 router.delete('/:id', deleteBlog);
+// GET: Lấy hết các bài Blog theo role
+router.get('/role', checkRole, getBlogByRole);
 
 module.exports = router;

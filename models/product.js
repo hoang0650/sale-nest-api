@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
     description: String,
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },
+    shopOwnerId: { type: mongoose.SchemaTypes.ObjectId, ref: 'User'},
     tiktokAffiliateLink: String,
     sold: {
         type: Number,

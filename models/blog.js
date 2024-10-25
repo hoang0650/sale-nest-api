@@ -37,6 +37,7 @@ const blogSchema = new mongoose.Schema({
   type: String,
   imageUrl: String,
   author: String,
+  authorId: { type: mongoose.SchemaTypes.ObjectId, ref: 'User'}, // Liên kết blog với user có role là 'blog'
   viewCount: {
     type: Number,
     default: 0

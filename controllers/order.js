@@ -25,6 +25,48 @@ async function getOrder(req, res) {
   }
 }
 
+// Lấy danh sách blog
+async function getOrderWithPage(req, res) {
+  const { search, page = 1, limit = 100 } = req.query; // Lấy page và limit từ query params, mặc định page = 1, limit = 10
+
+  try {
+    let query = {};
+
+    // Xử lý tìm kiếm nếu có tham số `search`
+    if (search) {
+      query = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },  // tìm kiếm theo tiêu đề
+          { author: { $regex: search, $options: 'i' } }, // tìm kiếm theo tác giả
+          { type: { $regex: search, $options: 'i' } }    // tìm kiếm theo danh mục
+        ]
+      };
+    }
+
+    // Tính toán skip và limit để phân trang
+    const skip = (page - 1) * limit;
+    
+    // Lấy danh sách blog có phân trang
+    const blogs = await Order.find(query)
+      .sort({ createdAt: -1 }) // -1 để sắp xếp theo thứ tự mới nhất
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Lấy tổng số blog để tính số trang
+    const totalCount = await Order.countDocuments(query);
+
+    // Trả về dữ liệu cùng với tổng số bài viết
+    res.json({
+      blogs,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit), // Tổng số trang
+      currentPage: parseInt(page),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Có lỗi xảy ra khi lấy danh sách blog', error: error.message });
+  }
+}
+
 async function getOrders(req,res) {
   try {
     const orders = await Order.find();
@@ -103,4 +145,4 @@ async function Payment (req, res) {
 };
 
 
-module.exports = {getOrder,getOrders,updateStatus,Payment};
+module.exports = {getOrder,getOrders,getOrderWithPage,updateStatus,Payment};

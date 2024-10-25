@@ -1,11 +1,13 @@
 var express = require('express');
 var router = express.Router();
-const {getProduct, getProductById, getRelated, getProductWithPage, createProduct, updateProduct, deleteProduct, countClickLink} = require('../controllers/product')
+const {getProduct, getProductById, getRelated, getProductWithPage, getProductByRole, createProduct, updateProduct, deleteProduct, countClickLink} = require('../controllers/product')
+const {checkRole} = require('../middleware/isAuthenticated')
+
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 router.get('/', getProduct);
 
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm, phân trang,)
-router.get('/', getProductWithPage);
+router.get('/query', getProductWithPage);
 
 // Lấy chi tiết sản phẩm theo ID
 router.get('/:id', getProductById);
@@ -24,5 +26,8 @@ router.put('/:id', updateProduct);
 
 // Xóa sản phẩm theo ID (chỉ admin)
 router.delete('/:id', deleteProduct);
+
+// GET: Lấy hết các bài Blog
+router.get('/role', checkRole, getProductByRole);
 
 module.exports = router;
