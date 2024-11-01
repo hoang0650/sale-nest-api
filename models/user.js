@@ -68,7 +68,8 @@ const UserSchema = new Schema({
         }
     ],
     usedVouchers: [{ type: String }],  // Thêm trường này để lưu voucher đã sử dụng
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 })
 
 const User = mongoose.model('User', UserSchema);

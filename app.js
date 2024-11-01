@@ -19,25 +19,44 @@ var videoRoutes = require('./routes/video');
 var creatorRoutes = require('./routes/creator');
 var blogRoutes = require('./routes/blog');
 var campaignRoutes = require('./routes/campaign');
+var audioRoutes = require('./routes/audio');
+var serviceRoutes = require('./routes/services')
 // var aiChatBotRoutes = require('./routes/aiChatBot');
 var customeAIRoutes = require('./routes/customeAI');
 var sessionRoutes = require('./routes/session');
 const swaggerConfig = require('./config/swagger');
-
+const {User} = require('./models/user')
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
 
 
 var app = express();
 connectDB();
 
-//Middleware để xác thực token
-function authentication(req, res, next) {
-  const token = req.header('Authorization')
-  if (!token) return res.status(401).json({ message: 'Authorization' })
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Forbidden' })
-    req.user = user
-    next();
-  })
+// Middleware to authenticate and decode token
+async function authentication(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: 'Authorization header missing.' });
+    }
+
+    const token = authHeader.split(' ')[1]; // Extract token from Bearer token
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: 'Invalid or expired token.' });
+      } else {
+        // Attach decoded user information to the request object
+        req.user = decoded;
+        next();
+      }
+    });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(500).json({ message: 'Internal server error during authentication.' });
+  }
 }
 
 // Middleware để kiểm tra role
@@ -85,6 +104,8 @@ app.use('/api/videos', videoRoutes);
 app.use('/api/creators', creatorRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/audios', audioRoutes);
+app.use('/api/services',authentication, serviceRoutes);
 // app.use('/api/ai', aiChatBotRoutes);
 app.use('/api/customAI', customeAIRoutes);
 app.use('/api/sessions', sessionRoutes);
