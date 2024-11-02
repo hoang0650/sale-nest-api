@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const BloggerSchema = new mongoose.Schema({
-user: { type: mongoose.SchemaTypes.ObjectId, ref: 'User', required: true },
+  user: { type: mongoose.SchemaTypes.ObjectId, ref: 'User', required: true },
+  bloggerName: {type: String},
   specialty: { type: String },
   bio: { type: String },
   experience: { type: Number },

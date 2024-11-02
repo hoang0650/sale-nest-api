@@ -22,7 +22,8 @@ async function bloggerRegister(req, res) {
     try {
         const blogger = new Blogger({
             ...req.body,
-            user: req.user._id
+            user: req.user._id,
+            bloggerName: req.user.username
         });
         await blogger.save();
         res.status(201).send(blogger);
