@@ -1,81 +1,39 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
-var app = require('../app');
-var debug = require('debug')('sale-api:server');
-var http = require('http');
-
-// Thêm socket.io
+const app = require('../app');
+const debug = require('debug')('sale-api:server');
+const http = require('http');
 const socketIO = require('socket.io');
 
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
+const server = http.createServer(app);
 
-var server = http.createServer(app);
-
-// Thêm dòng này để khởi tạo socket.io với server
 const io = socketIO(server, {
   cors: {
-    origin: "https://www.nintshop.com", // Địa chỉ Angular frontend của bạn
-    methods: ["GET", "POST"], // Các phương thức được phép
-    allowedHeaders: ["my-custom-header"], // Thêm nếu có headers cần thiết
-    credentials: true // Nếu cần gửi cookie hoặc authentication
+    origin: "https://www.nintshop.com",
+    // origin: "http://localhost:4200",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["my-custom-header"],
+    credentials: true
   }
 });
-
-/**
- * Listen on provided port, on all network interfaces.
- */
 
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-/**
- * Normalize a port into a number, string, or false.
- */
-
 function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
+  const port = parseInt(val, 10);
+  if (isNaN(port)) return val;
+  if (port >= 0) return port;
   return false;
 }
 
-/**
- * Event listener for HTTP server "error" event.
- */
-
 function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
+  if (error.syscall !== 'listen') throw error;
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
@@ -90,27 +48,33 @@ function onError(error) {
   }
 }
 
-/**
- * Event listener for HTTP server "listening" event.
- */
-
 function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  const addr = server.address();
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
+// Lưu trữ vị trí của tất cả user đang kết nối
+let users = {};
 
-  socket.on('message', (msg) => {
-    console.log('Message received: ', msg);
-    io.emit('message', msg);
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('new-user', (data) => {
+    users[socket.id] = { username: data.username, position: data.position };
+    io.emit('update-users', users);
+  });
+
+  socket.on('move', (data) => {
+    if (users[socket.id]) {
+      users[socket.id].position = data.position;
+      io.emit('update-users', users); // Gửi thông tin mới đến tất cả các client
+    }
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    delete users[socket.id];
+    io.emit('update-users', users); // Cập nhật danh sách khi có user rời đi
+    console.log('User disconnected:', socket.id);
   });
 });
