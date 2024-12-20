@@ -23,7 +23,7 @@ const sendEmail = (toEmail, order) => {
   }).join('\n');
 
   const mailOptions = {
-    from: 'noreply@yensaothanhbinh.com',
+    from: 'noreply@nintshop.com',
     to: toEmail,
     subject: `Xác nhận đơn hàng ${order.orderId}`,
     text: `Cảm ơn bạn đã đặt hàng!\n\nChi tiết đơn hàng của bạn:\n\nMã đơn hàng: ${order.orderId}\n\nSản phẩm:\n${orderDetails}\n\nThành tiền: ${formatNumber(order.subtotal)} VNĐ\n\nGiảm giá: ${formatNumber(order.discount)} VNĐ\n\nTổng tiền: ${formatNumber(order.totalPrice)} VND`,

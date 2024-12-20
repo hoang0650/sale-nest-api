@@ -35,6 +35,8 @@ async function getProduct(req, res) {
 
   try {
     let query = {};
+    let page = 1;
+    let limit = 100;
 
     if (search) {
       query = {
@@ -45,8 +47,13 @@ async function getProduct(req, res) {
         ]
       };
     }
+    // Tính toán skip và limit để phân trang
+    const skip = (page - 1) * limit;
 
-    const products = await Product.find(query);
+    const products = await Product.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));;
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
