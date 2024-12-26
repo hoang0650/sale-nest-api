@@ -87,7 +87,7 @@ async function getProductByRole(req,res){
 
 // Lấy danh sách sản phẩm (có hỗ trợ tìm kiếm)
 async function getProductWithPage(req, res) {
-  const { search, page = 1, limit = 100 } = req.query;
+  const { search, page = 1, limit = 100 , min, max } = req.query;
 
   try {
     let query = {};
@@ -100,6 +100,17 @@ async function getProductWithPage(req, res) {
           { type: { $regex: search, $options: 'i' } }
         ]
       };
+    }
+
+    // Thêm điều kiện lọc theo giá
+    if (min !== undefined || max !== undefined) {
+      query.price = {};
+      if (min !== undefined) {
+        query.price.$gte = parseFloat(min);
+      }
+      if (max !== undefined) {
+        query.price.$lte = parseFloat(max);
+      }
     }
     // Tính toán skip và limit để phân trang
     const skip = (page - 1) * limit;

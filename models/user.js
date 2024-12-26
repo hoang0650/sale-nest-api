@@ -23,6 +23,8 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
+    resetPasswordToken: {type: String},
+    resetPasswordExpires: {type: Date},
     blocked: {
         type: Boolean, default: false
     },
@@ -31,7 +33,7 @@ const UserSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'shop', 'blog', 'admin'],
+        enum: ['user', 'shop', 'news', 'blog', 'admin'],
         default: 'user',
         required: true,
     },
@@ -67,6 +69,7 @@ const UserSchema = new Schema({
             ipAddress: String
         }
     ],
+
     usedVouchers: [{ type: String }],  // Thêm trường này để lưu voucher đã sử dụng
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }

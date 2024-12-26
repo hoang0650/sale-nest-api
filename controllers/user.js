@@ -3,6 +3,8 @@ const { Post } = require('../models/post')
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { sendForgotPasswordEmail } = require('../config/emailService');
 dotenv.config();
 
 // Invalid Voucher Code
@@ -155,6 +157,62 @@ async function login(req, res) {
     }
 }
 
+async function forgotPassword(req, res) {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+    
+        if (!user) {
+          return res.status(404).json({ message: 'Không tìm thấy người dùng với email này.' });
+        }
+    
+        // Tạo token reset password
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 giờ
+    
+        await user.save();
+    
+        // Gửi email
+        await sendForgotPasswordEmail(user.email, resetToken);
+    
+        res.json({ message: 'Email hướng dẫn đặt lại mật khẩu đã được gửi.' });
+      } catch (error) {
+        console.error('Lỗi trong quá trình xử lý quên mật khẩu:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi', error: error.message });
+      }
+}
+
+async function resetPassword (req,res) {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+    
+        const user = await User.findOne({
+          resetPasswordToken: token,
+          resetPasswordExpires: { $gt: Date.now() }
+        });
+    
+        if (!user) {
+          return res.status(400).json({ message: 'Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.' });
+        }
+    
+        const hashedPassword = await bcrypt.hash(password, 8);
+    
+        // Cập nhật mật khẩu và xóa token
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+    
+        await user.save();
+    
+        res.json({ message: 'Mật khẩu của bạn đã được thay đổi thành công.' });
+      } catch (error) {
+        console.error('Lỗi trong quá trình đặt lại mật khẩu:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi', error: error.message });
+      }
+}
+
 // Update avatar
 async function updateAvatar(req, res) {
     try {
@@ -222,6 +280,8 @@ module.exports = {
     getUserInfo,
     createUser,
     login,
+    forgotPassword,
+    resetPassword,
     applyVoucher,
     updateAvatar,
     updateCoverPhoto,
