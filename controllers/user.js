@@ -174,7 +174,7 @@ async function forgotPassword(req, res) {
         await user.save();
     
         // Gửi email
-        await sendForgotPasswordEmail(user.email, resetToken);
+        await sendForgotPasswordEmail(email, resetToken);
     
         res.json({ message: 'Email hướng dẫn đặt lại mật khẩu đã được gửi.' });
       } catch (error) {
