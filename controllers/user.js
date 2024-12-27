@@ -133,7 +133,7 @@ async function login(req, res) {
             email: user.email,
             blocked: user.blocked,
             role: user.role,
-            loginHistory: user.loginHistory,
+            loginHistory: user.loginHistory.find().sort({ createdAt: -1 }),
             usedVouchers: user.usedVouchers,
         };
 

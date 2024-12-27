@@ -33,7 +33,7 @@ const UserSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'shop', 'news', 'blog', 'admin'],
+        enum: ['user', 'shop', 'agent', 'blog', 'admin'],
         default: 'user',
         required: true,
     },
@@ -56,12 +56,18 @@ const UserSchema = new Schema({
     friends: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'User' }],
     blockedUsers: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'User' }],
     loyaltyPoints: { type: Number, default: 0 },
+    listings: [
+        {
+            type: mongoose.SchemaTypes.ObjectId,
+            ref: 'RealEstate',
+        },
+    ],  
     transactions: [
         {
             type: mongoose.SchemaTypes.ObjectId,
             ref: 'Transaction',
         },
-    ],  
+    ],
     orderHistory: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order' }],
     loginHistory: [
         {

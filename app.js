@@ -20,7 +20,8 @@ var creatorRoutes = require('./routes/creator');
 var blogRoutes = require('./routes/blog');
 var campaignRoutes = require('./routes/campaign');
 var audioRoutes = require('./routes/audio');
-var serviceRoutes = require('./routes/services')
+var serviceRoutes = require('./routes/services');
+var realestateRoutes = require('./routes/realestate')
 // var aiChatBotRoutes = require('./routes/aiChatBot');
 var customeAIRoutes = require('./routes/customeAI');
 var sessionRoutes = require('./routes/session');
@@ -105,6 +106,7 @@ app.use('/api/creators', creatorRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/audios', audioRoutes);
+app.use('/api/real-estate', realestateRoutes);
 app.use('/api/services',authentication, serviceRoutes);
 // app.use('/api/ai', aiChatBotRoutes);
 app.use('/api/customAI', customeAIRoutes);
