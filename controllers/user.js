@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { sendForgotPasswordEmail } = require('../config/emailService');
 dotenv.config();
 
@@ -157,6 +159,93 @@ async function login(req, res) {
     }
 }
 
+// Cấu hình Passport Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "https://nintshop-phgroup.vercel.app/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Tìm hoặc tạo user dựa trên thông tin Google
+      let user = await User.findOne({ email: profile.emails[0].value });
+      
+      if (!user) {
+        // Nếu user chưa tồn tại, tạo mới
+        user = new User({
+          email: profile.emails[0].value,
+          username: profile.displayName,
+          googleId: profile.id,
+          image: profile.photos[0].value,
+          password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10) // Tạo mật khẩu ngẫu nhiên
+        });
+      } else {
+        // Nếu user đã tồn tại, cập nhật thông tin
+        user.googleId = profile.id;
+        user.image = profile.photos[0].value;
+        user.username = profile.displayName;
+      }
+
+      await user.save();
+      done(null, user);
+    } catch (error) {
+      done(error, null);
+    }
+  }
+));
+
+// Google Login Route
+function googleLogin(req, res, next) {
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  }
+  
+  // Google Login Callback
+  async function googleLoginCallback(req, res, next) {
+    passport.authenticate('google', { session: false }, async (err, user) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error logging in with Google.' });
+      }
+      
+      if (!user) {
+        return res.status(401).json({ message: 'Failed to authenticate with Google.' });
+      }
+  
+      try {
+        // Tạo payload cho token (tương tự như trong hàm login)
+        const payloadData = {
+          _id: user._id,
+          userId: user.userId,
+          balance: user.balance,
+          coinBalance: user.coinBalance,
+          username: user.username,
+          email: user.email,
+          blocked: user.blocked,
+          role: user.role,
+          loginHistory: user.loginHistory,
+          usedVouchers: user.usedVouchers,
+        };
+  
+        // Tạo token với JWT
+        const token = jwt.sign(payloadData, process.env.JWT_SECRET, {
+          expiresIn: '30d',
+        });
+  
+        // Lấy địa chỉ IP người dùng
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  
+        // Cập nhật trạng thái online và lịch sử đăng nhập
+        user.online = true;
+        user.loginHistory.push({ loginDate: new Date(), ipAddress });
+        await user.save();
+  
+        res.send({ message: 'Google login successful', token });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error logging in with Google.' });
+      }
+    })(req, res, next);
+  }
+
 async function forgotPassword(req, res) {
     try {
         const { email } = req.body;
@@ -280,6 +369,8 @@ module.exports = {
     getUserInfo,
     createUser,
     login,
+    googleLogin, 
+    googleLoginCallback,
     forgotPassword,
     resetPassword,
     applyVoucher,
@@ -287,5 +378,5 @@ module.exports = {
     updateCoverPhoto,
     createPost,
     getFriends,
-    getPost
+    getPost,
 };
