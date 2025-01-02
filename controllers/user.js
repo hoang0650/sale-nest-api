@@ -211,10 +211,14 @@ function googleLogin(req, res, next) {
       }
   
       try {
+        // Tạo userId duy nhất
+        function generateUniqueUserId() {
+            return Date.now().toString() + Math.floor(Math.random() * 1000);
+        }
         // Tạo payload cho token (tương tự như trong hàm login)
         const payloadData = {
           _id: user._id,
-          userId: user.userId,
+          userId: generateUniqueUserId(),
           balance: user.balance,
           coinBalance: user.coinBalance,
           username: user.username,
