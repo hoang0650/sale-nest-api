@@ -137,9 +137,9 @@ router.post('/login', login);
  *       500:
  *         description: Internal server error
  */
-router.get('/auth/google', googleLogin);
+router.post('/auth/google', googleLogin);
 
-router.get('/auth/google/callback', googleLoginCallback);
+router.post('/auth/google/callback', googleLoginCallback);
 
 router.get('/info', getUserInfo);
 
